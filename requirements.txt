@@ -2,7 +2,7 @@ Flask==2.0.1
 SQLAlchemy==1.4.23
 Werkzeug==2.0.1
 opencv-python==4.8.0.74
-mediapipe==0.10.18
+
 numpy>=1.24.3
 Pillow==10.0.0
 trimesh>=3.9.35
