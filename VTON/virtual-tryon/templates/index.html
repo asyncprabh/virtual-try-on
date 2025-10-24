@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .hero {
+        background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+        color: white;
+        padding: 100px 0;
+        text-align: center;
+        margin-bottom: 60px;
+    }
+
+    .hero h1 {
+        font-size: 3.5rem;
+        font-weight: 700;
+        margin-bottom: 20px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .hero p {
+        font-size: 1.2rem;
+        margin-bottom: 30px;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .cta-buttons {
+        margin-top: 30px;
+    }
+
+    .btn {
+        padding: 12px 30px;
+        border-radius: 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s ease;
+        margin: 0 10px;
+        text-decoration: none;
+    }
+
+    .btn.primary {
+        background: white;
+        color: #000DFF;
+    }
+
+    .btn.primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3);
+    }
+
+    .btn.secondary {
+        background: transparent;
+        border: 2px solid white;
+        color: white;
+    }
+
+    .btn.secondary:hover {
+        background: white;
+        color: #000DFF;
+        transform: translateY(-2px);
+    }
+
+    .features {
+        padding: 60px 0;
+    }
+
+    .features h2 {
+        text-align: center;
+        font-size: 2.5rem;
+        margin-bottom: 50px;
+        color: #2D3748;
+    }
+
+    .feature-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 30px;
+        padding: 0 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    .feature-card {
+        background: white;
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        transition: transform 0.3s ease;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-card h3 {
+        color: #2D3748;
+        font-size: 1.5rem;
+        margin-bottom: 15px;
+    }
+
+    .feature-card p {
+        color: #4A5568;
+        line-height: 1.6;
+    }
+
+    .feature-icon {
+        font-size: 2.5rem;
+        color: #000DFF;
+        margin-bottom: 20px;
+    }
+
+    @media (max-width: 768px) {
+        .hero h1 {
+            font-size: 2.5rem;
+        }
+
+        .hero p {
+            font-size: 1rem;
+            padding: 0 20px;
+        }
+
+        .btn {
+            display: block;
+            margin: 10px auto;
+            max-width: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="container">
+        <h1>Welcome to Virtual Try-On</h1>
+        <p>Experience the future of online shopping with our AI-powered virtual fitting room. Try clothes on virtually and shop with confidence.</p>
+        {% if 'user_id' not in session %}
+            <div class="cta-buttons">
+                <a href="{{ url_for('login') }}" class="btn primary">Login</a>
+                <a href="{{ url_for('register') }}" class="btn secondary">Register</a>
+            </div>
+        {% else %}
+            <a href="{{ url_for('products') }}" class="btn primary">Browse Products</a>
+        {% endif %}
+    </div>
+</div>
+
+<section class="features">
+    <div class="container">
+        <h2>Our Features</h2>
+        <div class="feature-grid">
+            <div class="feature-card">
+                <i class="fas fa-ruler feature-icon"></i>
+                <h3>AI Body Measurements</h3>
+                <p>Get accurate measurements using our advanced AI technology for the perfect fit every time.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-tshirt feature-icon"></i>
+                <h3>Virtual Fitting</h3>
+                <p>Try clothes virtually before making a purchase, ensuring satisfaction with every order.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-magic feature-icon"></i>
+                <h3>Size Recommendations</h3>
+                <p>Get personalized size recommendations based on your measurements and preferences.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Flash Messages -->
+<div class="flash-messages">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+</div>
+{% endblock %}

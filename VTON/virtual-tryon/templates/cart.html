@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .cart-item {
+        border-radius: 10px;
+        margin-bottom: 20px;
+        padding: 15px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .cart-image {
+        max-width: 150px;
+        border-radius: 8px;
+    }
+    
+    .cart-total {
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function updatePrice(productId, size) {
+    // Create form data
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('size', size);
+
+    // Send AJAX request to update size and get new price
+    fetch('/update_size', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update price displays
+            const priceElement = document.getElementById('price-' + productId);
+            const unitPriceElement = document.getElementById('unit-price-' + productId);
+            const quantity = parseInt(document.getElementById('quantity-' + productId).value, 10);
+            
+            if (priceElement && unitPriceElement) {
+                unitPriceElement.textContent = data.price_display + ' each';
+                const totalPrice = parseFloat(data.new_price) * quantity;
+                priceElement.textContent = '₹' + totalPrice.toFixed(2);
+            }
+            // Update cart total
+            updateCartTotal();
+        } else {
+            console.error('Error updating size:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function updateQuantity(productId, change) {
+    const quantityInput = document.getElementById(`quantity-${productId}`);
+    const currentQuantity = parseInt(quantityInput.value);
+    const newQuantity = Math.max(1, Math.min(10, currentQuantity + change));
+    
+    if (newQuantity === currentQuantity) return;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    formData.append('quantity', newQuantity);
+
+    // Send AJAX request to update quantity
+    fetch('/update_quantity', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update quantity display
+            quantityInput.value = newQuantity;
+            
+            // Update price displays
+            const priceElement = document.getElementById(`price-${productId}`);
+            if (priceElement) {
+                const unitPrice = parseFloat(data.unit_price);
+                const totalPrice = unitPrice * newQuantity;
+                priceElement.textContent = `₹${totalPrice.toFixed(2)}`;
+            }
+            
+            // Update cart total
+            updateCartTotal();
+        } else {
+            console.error('Error updating quantity:', data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+function updateCartTotal() {
+    const priceElements = document.querySelectorAll('.cart-total');
+    let total = 0;
+
+    priceElements.forEach((element, index) => {
+        // Skip the last element as it's the total display
+        if (index < priceElements.length - 1) {
+            const priceText = element.textContent.replace('₹', '').replace(',', '');
+            total += parseFloat(priceText);
+        }
+    });
+
+    // Update total display
+    const totalElement = priceElements[priceElements.length - 1];
+    if (totalElement) {
+        totalElement.textContent = `₹${total.toFixed(2)}`;
+    }
+}
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-5">Shopping Cart</h1>
+    
+    {% if cart_items %}
+    <div class="cart-items">
+        {% for item in cart_items %}
+        <div class="cart-item">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <img src="{{ url_for('static', filename=item.image_url) }}" class="cart-image" alt="{{ item.name }}">
+                </div>
+                <div class="col-md-4">
+                    <h5>{{ item.name }}</h5>
+                    <p class="text-muted">{{ item.description }}</p>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="size-{{ item.id }}" class="form-label">Size:</label>
+                        <select class="form-select" id="size-{{ item.id }}" onchange="updatePrice('{{ item.id }}', this.value)">
+                            {% for size in item.sizes %}
+                            <option value="{{ size }}" {% if size == item.selected_size %}selected{% endif %}>{{ size }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="mb-2">
+                        <label for="quantity-{{ item.id }}" class="form-label">Quantity:</label>
+                        <div class="input-group">
+                            <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity('{{ item.id }}', -1)">-</button>
+                            <input type="number" class="form-control text-center" id="quantity-{{ item.id }}" value="{{ item.quantity }}" min="1" max="10" readonly>
+                            <button type="button" class="btn btn-outline-secondary" onclick="updateQuantity('{{ item.id }}', 1)">+</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-2 text-end">
+                    <p class="cart-total" id="price-{{ item.id }}">{{ item.price_display }}</p>
+                    <p class="text-muted small" id="unit-price-{{ item.id }}">{{ item.unit_price_display }} each</p>
+                    <form action="{{ url_for('remove_from_cart') }}" method="POST" class="d-inline">
+                        <input type="hidden" name="product_id" value="{{ item.id }}">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash"></i> Remove
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <div class="text-end mt-4">
+            <h4 class="mb-3">Total: <span class="cart-total">{{ total_price_display }}</span></h4>
+            <a href="{{ url_for('order_details') }}" class="btn btn-success btn-lg">
+                <i class="fas fa-shopping-bag me-2"></i>Place Order
+            </a>
+        </div>
+    </div>
+    {% else %}
+    <div class="text-center">
+        <h3>Your cart is empty</h3>
+        <a href="{{ url_for('products') }}" class="btn btn-primary mt-3">
+            <i class="fas fa-shopping-bag me-2"></i>Continue Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

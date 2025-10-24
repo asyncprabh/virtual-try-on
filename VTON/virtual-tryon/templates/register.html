@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .register-container {
+        background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+        min-height: calc(100vh - 56px);
+        padding: 60px 0;
+    }
+
+    .register-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+        max-width: 400px;
+        margin: 0 auto;
+    }
+
+    .register-header {
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .register-header h2 {
+        color: #2D3748;
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .register-header p {
+        color: #4A5568;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        color: #2D3748;
+        font-weight: 500;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border: 2px solid #E2E8F0;
+        border-radius: 8px;
+        padding: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #000DFF;
+        box-shadow: 0 0 0 2px rgba(0, 13, 255, 0.1);
+    }
+
+    .input-group {
+        position: relative;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #718096;
+        z-index: 10;
+    }
+
+    .input-with-icon {
+        padding-left: 40px;
+    }
+
+    .password-requirements {
+        margin-top: 10px;
+        font-size: 0.9rem;
+    }
+
+    .requirement {
+        color: #718096;
+        margin: 5px 0;
+    }
+
+    .requirement i {
+        font-size: 0.8rem;
+        margin-right: 5px;
+    }
+
+    .requirement.valid {
+        color: #48BB78;
+    }
+
+    .requirement.valid i {
+        color: #48BB78;
+    }
+
+    .flash-messages {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1000;
+        max-width: 400px;
+    }
+
+    .alert {
+        margin-bottom: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="container">
+        <!-- Flash Messages -->
+        <div class="flash-messages">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="register-card">
+            <div class="register-header">
+                <h2>Create Account</h2>
+                <p>Join Virtual Try-On today</p>
+            </div>
+            
+            <form method="POST" action="{{ url_for('register') }}" id="registerForm">
+                <div class="form-group">
+                    <label for="name" class="form-label">Full Name</label>
+                    <div class="input-group">
+                        <i class="fas fa-user input-icon"></i>
+                        <input type="text" class="form-control input-with-icon" id="name" name="name" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <div class="input-group">
+                        <i class="fas fa-envelope input-icon"></i>
+                        <input type="email" class="form-control input-with-icon" id="email" name="email" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-group">
+                        <i class="fas fa-lock input-icon"></i>
+                        <input type="password" class="form-control input-with-icon" id="password" name="password" required>
+                    </div>
+                    <div class="password-requirements">
+                        <div class="requirement" id="length">
+                            <i class="fas fa-circle"></i> At least 8 characters
+                        </div>
+                        <div class="requirement" id="number">
+                            <i class="fas fa-circle"></i> Contains a number
+                        </div>
+                        <div class="requirement" id="special">
+                            <i class="fas fa-circle"></i> Contains a special character
+                        </div>
+                        <div class="requirement" id="uppercase">
+                            <i class="fas fa-circle"></i> Contains an uppercase letter
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100 mt-4">Create Account</button>
+                
+                <div class="text-center mt-3">
+                    <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const password = document.getElementById('password');
+    const requirements = {
+        length: document.getElementById('length'),
+        number: document.getElementById('number'),
+        special: document.getElementById('special'),
+        uppercase: document.getElementById('uppercase')
+    };
+
+    password.addEventListener('input', function() {
+        const value = this.value;
+        
+        // Check length
+        if(value.length >= 8) {
+            requirements.length.classList.add('valid');
+        } else {
+            requirements.length.classList.remove('valid');
+        }
+        
+        // Check for number
+        if(/\d/.test(value)) {
+            requirements.number.classList.add('valid');
+        } else {
+            requirements.number.classList.remove('valid');
+        }
+        
+        // Check for special character
+        if(/[!@#$%^&*(),.?":{}|<>]/.test(value)) {
+            requirements.special.classList.add('valid');
+        } else {
+            requirements.special.classList.remove('valid');
+        }
+        
+        // Check for uppercase
+        if(/[A-Z]/.test(value)) {
+            requirements.uppercase.classList.add('valid');
+        } else {
+            requirements.uppercase.classList.remove('valid');
+        }
+    });
+
+    // Auto-dismiss flash messages after 5 seconds
+    setTimeout(function() {
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function(alert) {
+            const closeButton = alert.querySelector('.btn-close');
+            if(closeButton) {
+                closeButton.click();
+            }
+        });
+    }, 5000);
+</script>
+{% endblock %}

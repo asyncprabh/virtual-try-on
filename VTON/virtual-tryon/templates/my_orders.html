@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">My Orders</h2>
+    {% if orders %}
+        <div class="row">
+            {% for order in orders %}
+                <div class="col-md-12 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span>Order #{{ order.id }}</span>
+                                <span>{{ order.created_at.strftime('%B %d, %Y') }}</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead>
+                                        <tr>
+                                            <th>Product</th>
+                                            <th>Size</th>
+                                            <th>Quantity</th>
+                                            <th>Price</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for item in order.items %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <img src="{{ url_for('static', filename=item.product.image_url) }}" alt="{{ item.product.name }}" class="img-thumbnail me-2" style="width: 50px;">
+                                                        {{ item.product.name }}
+                                                    </div>
+                                                </td>
+                                                <td>{{ item.size }}</td>
+                                                <td>{{ item.quantity }}</td>
+                                                <td>{{ price_display(item.price) }}</td>
+                                                <td>{{ price_display(item.price * item.quantity) }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="4" class="text-end"><strong>Order Total:</strong></td>
+                                            <td><strong>{{ price_display(order.total_amount) }}</strong></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                            <div class="mt-3">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>Total Amount:</strong> {{ price_display(order.total_amount) }}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>Payment Method:</strong> 
+                                        {% if order.payment_method == 'cod' %}
+                                            Cash on Delivery
+                                        {% elif order.payment_method == 'upi' %}
+                                            UPI Payment
+                                        {% else %}
+                                            Credit/Debit Card
+                                        {% endif %}
+                                        <br>
+                                        <strong>Payment Status:</strong>
+                                        {% if order.payment_status == 'pending' %}
+                                            <span class="badge bg-warning">Pending</span>
+                                        {% elif order.payment_status == 'completed' %}
+                                            <span class="badge bg-success">Completed</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">Failed</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>You haven't placed any orders yet.
+            <a href="{{ url_for('products') }}" class="alert-link">Browse our products</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Try-On</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Virtual Try-On Experience</h1>
+        <button id="tryOnBtn" class="main-btn">Try On</button>
+        
+        <div id="optionsContainer" class="hidden">
+            <button id="imageBtn" class="option-btn">Image</button>
+            <button id="videoBtn" class="option-btn">Video</button>
+        </div>
+
+        <div id="imageContainer" class="hidden">
+            <input type="file" id="imageInput" accept="image/*">
+            <div id="previewContainer">
+                <img id="preview" src="" alt="Preview">
+                <div id="virtualClothes"></div>
+            </div>
+        </div>
+
+        <div id="videoContainer" class="hidden">
+            <video id="videoElement" autoplay playsinline></video>
+            <div id="virtualClothesVideo"></div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

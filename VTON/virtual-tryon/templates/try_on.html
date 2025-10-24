@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+.video-container {
+    background-color: #f8f9fa;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: none;
+}
+
+.video-container img,
+.video-container video {
+    width: 100%;
+    height: auto;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+}
+
+#processedFrame {
+    background-color: #f8f9fa;
+    min-height: 300px;
+    object-fit: contain;
+}
+</style>
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>{{ product.name }}</h3>
+                </div>
+                <div class="card-body">
+                    <img src="{{ url_for('static', filename=product.image_url) }}" 
+                         class="img-fluid" alt="{{ product.name }}">
+                    <p class="mt-3">{{ product.description }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Try On</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages() %}
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-info">{{ message }}</div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <!-- Try On Options -->
+                    <div class="text-center mb-4">
+                        <button id="tryOnBtn" class="btn btn-primary">Try On</button>
+                        
+                        <div id="optionsContainer" style="display: none;" class="mt-3">
+                            <button id="imageBtn" class="btn btn-info mx-2">Image</button>
+                            <button id="videoBtn" class="btn btn-info mx-2">Live Camera</button>
+                        </div>
+                    </div>
+
+                    <!-- Image Upload Section -->
+                    <div id="imageSection" style="display: none;">
+                        <form action="{{ url_for('try_on', product_id=product.id) }}" 
+                              method="post" 
+                              enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="photo">Upload Your Photo:</label>
+                                <input type="file" 
+                                       class="form-control" 
+                                       id="photo" 
+                                       name="photo" 
+                                       accept="image/*" 
+                                       required>
+                            </div>
+                            
+                            <!-- Image Preview -->
+                            <div class="mt-3">
+                                <img id="preview" style="max-width: 100%; display: none;" 
+                                     class="img-fluid">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary mt-3">
+                                Virtual Try On
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Video Section -->
+                    <div id="videoSection" style="display: none;">
+                        <div class="video-container position-relative">
+                            <video id="videoElement" autoplay playsinline class="img-fluid" style="display: none; pointer-events: none;"></video>
+                            <canvas id="videoCanvas" style="display: none;"></canvas>
+                            <div id="processingOverlay" class="position-absolute top-0 start-0 w-100 h-100 d-none">
+                                <div class="d-flex justify-content-center align-items-center h-100">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Processing...</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="resultContainer">
+                                <img id="processedFrame" class="img-fluid" alt="Live try-on" style="pointer-events: none; user-select: none;">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Try-on Result -->
+                    {% if result_image %}
+                    <div class="result-section mt-4">
+                        <h2>Try-on Result:</h2>
+                        <div class="result-image-container">
+                            <img src="{{ result_image }}" alt="Try-on result" class="img-fluid">
+                            <a href="{{ url_for('download_result', filename=result_image.split('/')[-1]) }}" 
+                               class="btn btn-success mt-3" download>
+                                <i class="fas fa-save"></i> Save Result
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tryOnBtn = document.getElementById('tryOnBtn');
+    const optionsContainer = document.getElementById('optionsContainer');
+    const imageBtn = document.getElementById('imageBtn');
+    const videoBtn = document.getElementById('videoBtn');
+    const imageSection = document.getElementById('imageSection');
+    const videoSection = document.getElementById('videoSection');
+    const videoElement = document.getElementById('videoElement');
+    const videoCanvas = document.getElementById('videoCanvas');
+    const processingOverlay = document.getElementById('processingOverlay');
+    const processedFrame = document.getElementById('processedFrame');
+    let stream = null;
+    let isProcessing = false;
+    let processingInterval = null;
+
+    // Show options when Try On button is clicked
+    tryOnBtn.addEventListener('click', function() {
+        optionsContainer.style.display = 'block';
+    });
+
+    // Handle image button click
+    imageBtn.addEventListener('click', function() {
+        imageSection.style.display = 'block';
+        videoSection.style.display = 'none';
+        stopVideo();
+    });
+
+    // Handle video button click
+    videoBtn.addEventListener('click', async function() {
+        imageSection.style.display = 'none';
+        videoSection.style.display = 'block';
+        await startVideo();
+        startProcessing();
+    });
+
+    // Start video stream
+    async function startVideo() {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ 
+                video: { 
+                    width: { ideal: 640 },
+                    height: { ideal: 480 }
+                } 
+            });
+            videoElement.srcObject = stream;
+        } catch (err) {
+            console.error('Error accessing camera:', err);
+            alert('Unable to access camera. Please make sure you have granted camera permissions.');
+        }
+    }
+
+    // Stop video stream
+    function stopVideo() {
+        if (processingInterval) {
+            clearInterval(processingInterval);
+            processingInterval = null;
+        }
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+            videoElement.srcObject = null;
+        }
+    }
+
+    // Handle image preview
+    document.getElementById('photo').addEventListener('change', function(e) {
+        const preview = document.getElementById('preview');
+        const file = e.target.files[0];
+        
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // Process video frames
+    function startProcessing() {
+        processingInterval = setInterval(async function() {
+            if (isProcessing) return;
+            
+            const context = videoCanvas.getContext('2d');
+            videoCanvas.width = videoElement.videoWidth;
+            videoCanvas.height = videoElement.videoHeight;
+            context.drawImage(videoElement, 0, 0, videoCanvas.width, videoCanvas.height);
+            
+            isProcessing = true;
+            processingOverlay.classList.remove('d-none');
+            
+            try {
+                // Convert canvas to blob
+                const blob = await new Promise(resolve => videoCanvas.toBlob(resolve, 'image/jpeg'));
+                const formData = new FormData();
+                formData.append('frame', blob, 'frame.jpg');
+                
+                // Send frame for processing
+                const response = await fetch("{{ url_for('try_on_realtime', product_id=product.id) }}", {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) throw new Error('Processing failed');
+                
+                const data = await response.json();
+                processedFrame.src = data.result_image + '?t=' + new Date().getTime();
+                
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                isProcessing = false;
+                processingOverlay.classList.add('d-none');
+            }
+        }, 100); // Process every 100ms for smoother updates
+    }
+
+    // Clean up when leaving the page
+    window.addEventListener('beforeunload', function() {
+        stopVideo();
+    });
+});
+</script>
+{% endblock %}

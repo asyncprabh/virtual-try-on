@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .result-container {
+        background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+        min-height: calc(100vh - 160px);
+        padding: 40px 0;
+    }
+    
+    .result-card {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+    }
+    
+    .result-image {
+        max-height: 500px;
+        object-fit: contain;
+        border-radius: 10px;
+    }
+    
+    .btn-action {
+        background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+        border: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(107, 115, 255, 0.4);
+        color: white;
+    }
+    
+    .btn-outline-action {
+        border: 2px solid #6B73FF;
+        padding: 12px 25px;
+        border-radius: 8px;
+        color: #6B73FF;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-outline-action:hover {
+        background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(107, 115, 255, 0.4);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="result-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="result-card p-4">
+                    <h2 class="text-center mb-4">Virtual Try-On Result</h2>
+                    
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='uploads/' + result_photo) }}" 
+                             class="result-image mb-4" 
+                             alt="Try-on result">
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h4>{{ product.name }}</h4>
+                            <p>{{ product.description }}</p>
+                            <p class="h4 mb-3">${{ "%.2f"|format(product.price) }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('try_on', product_id=product.id) }}" class="btn btn-outline-action">
+                                    <i class="fas fa-redo me-2"></i>Try Again
+                                </a>
+                                <button class="btn btn-action">
+                                    <i class="fas fa-shopping-cart me-2"></i>Add to Cart
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center">
+                        <a href="{{ url_for('products') }}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Products
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

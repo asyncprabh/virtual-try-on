@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block extra_js %}
+<script>
+function addToCart(event, form) {
+    event.preventDefault();
+    
+    const productId = form.dataset.productId;
+    const productName = form.dataset.productName;
+    
+    // Create form data
+    const formData = new FormData();
+    formData.append('product_id', productId);
+    
+    // Send AJAX request
+    fetch('{{ url_for('add_to_cart') }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success toast
+            const toast = new bootstrap.Toast(document.getElementById('cartToast'));
+            document.getElementById('toastMessage').textContent = `${productName} added to cart!`;
+            toast.show();
+        } else {
+            alert(data.error || 'Error adding product to cart');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error adding product to cart');
+    });
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .product-card {
+        border-radius: 15px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    }
+    
+    .product-image {
+        height: 300px;
+        object-fit: cover;
+        width: 100%;
+    }
+    
+    .product-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin: 10px 0;
+    }
+    
+    .product-price {
+        font-size: 1.1rem;
+        color: #2D3748;
+        font-weight: 700;
+    }
+    
+    .btn-try-on {
+        background: linear-gradient(135deg, #6B73FF 0%, #000DFF 100%);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-try-on:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(107, 115, 255, 0.4);
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <h1 class="text-center mb-5">Our Collection</h1>
+    
+    <div class="row g-4">
+        {% for product in products %}
+        <div class="col-md-4">
+            <div class="card product-card">
+                <img src="{{ url_for('static', filename=product.image_url) }}" class="product-image" alt="{{ product.name }}">
+                <div class="card-body">
+                    <h5 class="product-title">{{ product.name }}</h5>
+                    <p class="card-text">{{ product.description }}</p>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="product-price">{{ price_display(product.price) }}</span>
+                        <a href="{{ url_for('try_on', product_id=product.id) }}" class="btn btn-try-on">
+                            <i class="fas fa-tshirt me-2"></i>Try On
+                        </a>
+                    </div>
+                    <form data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" onsubmit="addToCart(event, this)" class="text-center">
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="fas fa-cart-plus me-2"></i>Add to Cart
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
